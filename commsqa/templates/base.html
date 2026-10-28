@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Correspondence QA{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <aside>
+    <div class="app">Correspondence QA</div>
+    <div>Client letters, confirms &amp; notices</div>
+    <nav>
+      {% set ep = request.endpoint %}
+      <a href="{{ url_for('dashboard') }}" class="{{ 'on' if ep == 'dashboard' }}">Scorecard</a>
+      <a href="{{ url_for('defects') }}" class="{{ 'on' if ep in ('defects', 'document') }}">Defect log</a>
+      <a href="{{ url_for('rules') }}" class="{{ 'on' if ep == 'rules' }}">Rule catalogue</a>
+      <a href="{{ url_for('sampling') }}" class="{{ 'on' if ep == 'sampling' }}">Sample size</a>
+    </nav>
+    <form method="get" action="{{ url_for('find_document') }}">
+      <label for="q">Open document</label>
+      <input id="q" name="q" placeholder="D000123 or ref" class="mono">
+    </form>
+    <form method="post" action="{{ url_for('whoami') }}">
+      <label for="user">Reviewer</label>
+      <input id="user" name="user" value="{{ user }}" placeholder="your name" onchange="this.form.submit()">
+    </form>
+  </aside>
+  <main>
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

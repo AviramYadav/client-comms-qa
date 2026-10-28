@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Rule catalogue · Correspondence QA{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Rule catalogue</h1><p>{{ rules|length }} automated checks. Each document runs the rules for its type.</p></div>
+</div>
+<div class="scroll">
+<table>
+  <thead><tr><th>Code</th><th>Check</th><th>Applies to</th><th>Severity</th><th>Root cause</th><th class="num">Found (latest run)</th></tr></thead>
+  <tbody>
+  {% for r in rules %}
+    <tr>
+      <td class="mono">{{ r.code }}</td>
+      <td><b>{{ r.title }}</b><br><span class="muted">{{ r.description }}</span></td>
+      <td>{% for t in r.doc_types %}{{ t.replace('_', ' ').title() }}{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+      <td><span class="sev {{ r.severity }}">{{ r.severity }}</span></td>
+      <td>{{ r.root_cause }}</td>
+      <td class="num">{% if counts.get(r.code) %}<a href="{{ url_for('defects', rule=r.code) }}">{{ counts[r.code] }}</a>{% else %}0{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

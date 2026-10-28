@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.doc_id }} · Correspondence QA{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1 class="mono" style="font-size:17px">{{ doc.doc_id }}</h1>
+    <p>{{ doc.doc_type.replace('_', ' ').title() }} &middot; ref <span class="mono">{{ doc.source_ref }}</span> &middot;
+       issued {{ doc.issued_on }} ({{ doc.week }}) &middot; template {{ doc.template_version }}</p>
+  </div>
+  <div class="nowrap">
+    {% if prev_id %}<a class="btn" href="{{ url_for('document', doc_id=prev_id) }}">&larr; Previous defective</a>{% endif %}
+    {% if next_id %}<a class="btn" href="{{ url_for('document', doc_id=next_id) }}">Next defective &rarr;</a>{% endif %}
+  </div>
+</div>
+
+<div class="split">
+  <section>
+    <h2>As printed</h2>
+    <div class="paper"><pre>{% for ln in lines %}<span class="ln{{ ' bad' if ln.rules }}">{% if ln.rules %}<span class="tag">{{ ln.rules|join(', ') }}</span>{% endif %}{{ ln.text or " " }}</span>{% endfor %}</pre></div>
+  </section>
+
+  <section>
+    <h2>Defects ({{ defects|length }})</h2>
+    {% for d in defects %}
+      <div class="defect">
+        <div class="row">
+          <div><b>{{ d.rule }}</b> {{ rules_by_code[d.rule].title }}</div>
+          <div class="nowrap"><span class="sev {{ d.severity }}">{{ d.severity }}</span> &middot; {{ d.root_cause }}</div>
+        </div>
+        <div class="diff">
+          <span class="muted">Field</span><span>{{ d.field }}</span>
+          <span class="muted">Expected</span><span class="mono exp">{{ d.expected }}</span>
+          <span class="muted">Printed</span><span class="mono got">{{ d.found }}</span>
+        </div>
+        <div class="muted" style="margin-top:4px">
+          <span class="status {{ d.status }}">{{ d.status }}</span>
+          {% if d.reviewer %}by {{ d.reviewer }} on {{ d.reviewed_at.replace('T', ' ') }}{% if d.comment %}: "{{ d.comment }}"{% endif %}{% endif %}
+        </div>
+        <form method="post" action="{{ url_for('review', defect_id=d.defect_id) }}">
+          <textarea name="comment" placeholder="Reviewer note (e.g. re-issued to client on ...)">{{ d.comment or "" }}</textarea>
+          <button class="btn" name="status" value="CONFIRMED">Confirm defect</button>
+          <button class="btn" name="status" value="REJECTED">Not a defect</button>
+          {% if d.status != "OPEN" %}<button class="btn" name="status" value="OPEN">Reopen</button>{% endif %}
+        </form>
+      </div>
+    {% else %}
+      <p class="muted">No defects. Every rule passed for this document.</p>
+    {% endfor %}
+
+    <h2 style="margin-top:20px">Source of truth</h2>
+    <dl class="kv">
+      <dt>Client</dt><dd>{{ client.client_id }} &middot; {{ client.name }}</dd>
+      <dt>Current address</dt><dd>{{ client.address }}, {{ client.city }} - {{ client.pin }}</dd>
+      {% for key, value in record.items() if key not in ("ref",) %}
+      <dt>{{ key.replace('_', ' ') }}</dt><dd class="{{ 'mono' if key in ('account_no', 'isin') }}">{{ value }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+</div>
+{% endblock %}

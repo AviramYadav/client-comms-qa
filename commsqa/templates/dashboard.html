@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1>QA scorecard</h1>
+    <p>Run {{ last.run_id }} &middot; {{ last.started_at.replace('T', ' ') }} &middot; {{ "{:,}".format(last.documents) }} documents checked in {{ last.seconds }}s (100% coverage, no sampling)</p>
+  </div>
+  <div>
+    <form method="post" action="{{ url_for('rerun') }}" style="display:inline"><button class="btn">Re-run checks</button></form>
+    <a class="btn primary" href="{{ url_for('scorecard') }}">Download Excel scorecard</a>
+  </div>
+</div>
+
+<div class="kpis">
+  <div><b>{{ "{:,}".format(k.documents) }}</b><span>Documents</span></div>
+  <div><b>{{ k.defective_documents }}</b><span>Defective documents</span></div>
+  <div><b>{{ "%.2f"|format(k.accuracy * 100) }}%</b><span>Accuracy</span></div>
+  <div><b>{{ k.defects }}</b><span>Defects</span></div>
+  <div><b style="color:var(--crit)">{{ k.critical }}</b><span><a href="{{ url_for('defects', severity='Critical') }}">Critical</a></span></div>
+  <div><b>{{ k.open }}</b><span><a href="{{ url_for('defects', status='OPEN') }}">Open for review</a></span></div>
+</div>
+
+<div class="split wide-left">
+  <section>
+    <h2>Weekly trend</h2>
+    {{ chart }}
+    <div class="legend"><i style="background:#c9dbd8"></i>defective documents (left axis) <i style="background:var(--accent);height:2px;margin-bottom:3px"></i>accuracy (right axis)</div>
+  </section>
+  <section>
+    <h2>By week</h2>
+    <table>
+      <thead><tr><th>Week</th><th class="num">Docs</th><th class="num">Defective</th><th class="num">Critical</th><th class="num">Accuracy</th></tr></thead>
+      <tbody>
+      {% for w in weeks %}
+        <tr><td><a href="{{ url_for('defects', week=w.week) }}">{{ w.week }}</a></td><td class="num">{{ w.documents }}</td>
+            <td class="num">{{ w.defective }}</td><td class="num">{{ w.critical }}</td>
+            <td class="num">{{ "%.2f"|format(w.accuracy * 100) }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<div class="split">
+  <section>
+    <h2>Pareto by rule</h2>
+    <table>
+      <thead><tr><th>Rule</th><th>Severity</th><th class="num">Defects</th><th class="num">Cum.</th></tr></thead>
+      <tbody>
+      {% for p in pareto %}
+        <tr>
+          <td class="bar-cell"><i style="width:{{ (p.share * 100)|round(1) }}%"></i><span><a href="{{ url_for('defects', rule=p.rule) }}">{{ p.rule }}</a> {{ p.title }}</span></td>
+          <td><span class="sev {{ p.severity }}">{{ p.severity }}</span></td>
+          <td class="num">{{ p.n }}</td>
+          <td class="num">{{ "%.0f"|format(p.cumulative * 100) }}%</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>By root cause</h2>
+    <table>
+      <thead><tr><th>Root cause</th><th class="num">Defects</th><th class="num">Documents</th></tr></thead>
+      <tbody>
+      {% for c in causes %}
+        <tr><td><a href="{{ url_for('defects', root_cause=c.label) }}">{{ c.label }}</a></td><td class="num">{{ c.n }}</td><td class="num">{{ c.docs }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 style="margin-top:18px">By document type</h2>
+    <table>
+      <thead><tr><th>Type</th><th class="num">Documents</th><th class="num">Defective</th><th class="num">Accuracy</th></tr></thead>
+      <tbody>
+      {% for t in types %}
+        <tr><td><a href="{{ url_for('defects', doc_type=t.doc_type) }}">{{ t.doc_type.replace('_', ' ').title() }}</a></td>
+            <td class="num">{{ t.documents }}</td><td class="num">{{ t.defective }}</td>
+            <td class="num">{{ "%.2f"|format(t.accuracy * 100) }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

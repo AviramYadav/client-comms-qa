@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sample size · Correspondence QA{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Manual QA sample size</h1>
+  <p>How many documents a reviewer would need to check by hand to estimate the error rate. Compare with the 100% automated check.</p></div>
+</div>
+
+<div class="split">
+  <section>
+    <form method="post" class="form">
+      <dl class="kv" style="row-gap:10px">
+        <dt><label for="population">Population (documents)</label></dt>
+        <dd><input type="number" id="population" name="population" value="{{ population }}" min="1"></dd>
+        <dt><label for="rate">Expected error rate (%)</label></dt>
+        <dd><input type="number" id="rate" name="rate" value="{{ '%g'|format(rate * 100) }}" step="0.1" min="0.1" max="50"></dd>
+        <dt><label for="margin">Margin of error (&plusmn; %)</label></dt>
+        <dd><input type="number" id="margin" name="margin" value="{{ '%g'|format(margin * 100) }}" step="0.1" min="0.1" max="20"></dd>
+        <dt><label for="confidence">Confidence</label></dt>
+        <dd><select id="confidence" name="confidence">
+          {% for c in [0.90, 0.95, 0.99] %}<option value="{{ c }}" {{ "selected" if c == confidence }}>{{ (c * 100)|int }}%</option>{% endfor %}
+        </select></dd>
+      </dl>
+      <p><button class="btn primary">Calculate</button></p>
+    </form>
+  </section>
+  <section>
+    <h2>Result</h2>
+    <p style="font-size:28px;margin:0;font-weight:600">{{ n }} <span style="font-size:13px;font-weight:400" class="muted">documents to review</span></p>
+    <p class="muted">n<sub>0</sub> = z&sup2;&middot;p(1&minus;p) / e&sup2;, then corrected for a finite population: n = n<sub>0</sub> / (1 + (n<sub>0</sub>&minus;1)/N).</p>
+    {% if latest.week %}
+    <p>For comparison, in {{ latest.week }} the automated check covered all {{ latest.documents }} documents and found
+       {{ latest.defective }} defective ones ({{ "%.2f"|format((1 - latest.accuracy) * 100) }}%).
+       A manual sample of {{ n }} at that rate would expect to surface about
+       <b>{{ "%.1f"|format(n * (1 - latest.accuracy)) }}</b> of them, and would rarely see the low-frequency critical defects at all.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

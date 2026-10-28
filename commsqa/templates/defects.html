@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Defect log · Correspondence QA{% endblock %}
+{% block content %}
+<div class="head">
+  <div><h1>Defect log</h1><p>{{ rows|length }}{% if rows|length == 1000 %}+{% endif %} defects in the latest run, most severe first.</p></div>
+</div>
+
+<form class="filters" method="get">
+  {% for key, label in [("week", "Week"), ("doc_type", "Document type"), ("severity", "Severity"),
+                        ("root_cause", "Root cause"), ("rule", "Rule"), ("status", "Status")] %}
+  <div>
+    <label for="{{ key }}">{{ label }}</label>
+    <select id="{{ key }}" name="{{ key }}" onchange="this.form.submit()">
+      <option value="">All</option>
+      {% for o in options[key] %}<option value="{{ o }}" {{ "selected" if filters[key] == o }}>{{ o }}{% if key == "rule" %} {{ rules_by_code[o].title }}{% endif %}</option>{% endfor %}
+    </select>
+  </div>
+  {% endfor %}
+  <div><a href="{{ url_for('defects') }}">Clear</a></div>
+</form>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Document</th><th>Issued</th><th>Type</th><th>Rule</th><th>Severity</th><th>Field</th><th>Expected</th><th>Printed</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+  {% for d in rows %}
+    <tr>
+      <td class="mono"><a href="{{ url_for('document', doc_id=d.doc_id) }}">{{ d.doc_id }}</a></td>
+      <td class="nowrap">{{ d.issued_on }}</td>
+      <td class="nowrap">{{ d.doc_type.replace('_', ' ').title() }}</td>
+      <td class="nowrap" title="{{ rules_by_code[d.rule].title }}">{{ d.rule }}</td>
+      <td><span class="sev {{ d.severity }}">{{ d.severity }}</span></td>
+      <td>{{ d.field }}</td>
+      <td class="mono">{{ d.expected|truncate(40) }}</td>
+      <td class="mono">{{ d.found|truncate(40) }}</td>
+      <td><span class="status {{ d.status }}">{{ d.status }}</span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="muted">No defects match these filters.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
